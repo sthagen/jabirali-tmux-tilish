@@ -10,24 +10,28 @@
 # The keybindings are taken nearly directly from `i3wm` and `sway`, but with
 # minor adaptation to fit better with `vim` and `tmux`. See also the README.
 
+# shellcheck disable=SC2016
+# shellcheck disable=SC2086
+# shellcheck disable=SC2250
+
 # Check input parameters {{{
 	# Whether we need to use legacy workarounds (required before tmux 2.7).
 	legacy="$(tmux -V | grep -E 'tmux (1\.|2\.[0-6])')"
-	
+
 	# Read user options.
 	for opt in default dmenu easymode navigate navigator prefix shiftnum
 	do
-		export "$opt"="$(tmux show-option -gv @tilish-$opt 2>/dev/null)"
+		export "$opt"="$(tmux show-option -gv @tilish-"$opt" 2>/dev/null)"
 	done
-	
+
 	# Default to US keyboard layout, unless something is configured.
 	if [ -z "$shiftnum" ]
 	then
 		shiftnum='!@#$%^&*()'
 	fi
-	
+
 	# Determine "arrow types".
-	if [ "$easymode" = "on" ]
+	if [ "${easymode:-}" = "on" ]
 	then
 		# Simplified arrows.
 		h='left';   j='down';   k='up';   l='right';
@@ -37,9 +41,9 @@
 		h='h'; j='j'; k='k'; l='l';
 		H='H'; J='J'; K='K'; L='L';
 	fi
-	
+
 	# Determine modifier vs. prefix key.
-	if [ -z "$prefix" ]
+	if [ -z "${prefix:-}" ]
 	then
 		bind='bind -n'
 		mod='M-'
@@ -77,7 +81,7 @@ bind_move () {
 
 bind_layout () {
 	# Bind keys to switch or refresh layouts.
-	if [ "$2" = "fullscreen" ]
+	if [ "$2" = "zoom" ]
 	then
 		# Invoke the zoom feature.
 		tmux $bind "$1" \
@@ -95,6 +99,12 @@ bind_layout () {
 				send escape
 		fi
 	fi
+}
+
+char_at () {
+	# Finding the character at a given position in
+	# a string in a way compatible with POSIX sh.
+	echo $1 | cut -c $2
 }
 # }}}
 
@@ -117,36 +127,36 @@ bind_switch "${mod}8" 8
 bind_switch "${mod}9" 9
 
 # Move pane to workspace via Alt + Shift + #.
-bind_move "${mod}$(expr substr $shiftnum 1 1)" 1
-bind_move "${mod}$(expr substr $shiftnum 2 1)" 2
-bind_move "${mod}$(expr substr $shiftnum 3 1)" 3
-bind_move "${mod}$(expr substr $shiftnum 4 1)" 4
-bind_move "${mod}$(expr substr $shiftnum 5 1)" 5
-bind_move "${mod}$(expr substr $shiftnum 6 1)" 6
-bind_move "${mod}$(expr substr $shiftnum 7 1)" 7
-bind_move "${mod}$(expr substr $shiftnum 8 1)" 8
-bind_move "${mod}$(expr substr $shiftnum 9 1)" 9
+bind_move "${mod}$(char_at $shiftnum 1)" 1
+bind_move "${mod}$(char_at $shiftnum 2)" 2
+bind_move "${mod}$(char_at $shiftnum 3)" 3
+bind_move "${mod}$(char_at $shiftnum 4)" 4
+bind_move "${mod}$(char_at $shiftnum 5)" 5
+bind_move "${mod}$(char_at $shiftnum 6)" 6
+bind_move "${mod}$(char_at $shiftnum 7)" 7
+bind_move "${mod}$(char_at $shiftnum 8)" 8
+bind_move "${mod}$(char_at $shiftnum 9)" 9
 
 # The mapping of Alt + 0 and Alt + Shift + 0 depends on `base-index`.
 # It can either refer to workspace number 0 or workspace number 10.
 if [ "$(tmux show-option -gv base-index)" = "1" ]
 then
 	bind_switch "${mod}0" 10
-	bind_move   "${mod}$(expr substr $shiftnum 10 1)" 10
+	bind_move   "${mod}$(char_at "$shiftnum" 10)" 10
 else
 	bind_switch "${mod}0" 0
-	bind_move   "${mod}$(expr substr $shiftnum 10 1)" 0
+	bind_move   "${mod}$(char_at "$shiftnum" 10)" 0
 fi
 
 # Switch layout with Alt + <mnemonic key>. The mnemonics are `s` and `S` for
 # layouts Vim would generate with `:split`, and `v` and `V` for `:vsplit`.
-# The remaining mappings based on `f` and `t` should be quite obvious.
+# The remaining mappings based on `z` and `t` should be quite obvious.
 bind_layout "${mod}s" 'main-horizontal'
 bind_layout "${mod}S" 'even-vertical'
 bind_layout "${mod}v" 'main-vertical'
 bind_layout "${mod}V" 'even-horizontal'
-bind_layout "${mod}f" 'fullscreen'
 bind_layout "${mod}t" 'tiled'
+bind_layout "${mod}z" 'zoom'
 
 # Refresh the current layout (e.g. after deleting a pane).
 if [ -z "$legacy" ]
@@ -222,9 +232,9 @@ then
 	# Autorefresh layout after deleting a pane.
 	tmux set-hook -g after-split-window "select-layout; select-layout -E"
 	tmux set-hook -g pane-exited "select-layout; select-layout -E"
-	
+
 	# Autoselect layout after creating new window.
-	if [ -n "$default" ]
+	if [ -n "${default:-}" ]
 	then
 		tmux set-hook -g window-linked "select-layout \"$default\"; select-layout -E"
 		tmux select-layout "$default"
@@ -234,24 +244,24 @@ fi
 # }}}
 
 # Integrate with Vim for transparent navigation {{{
-if [ "$navigate" = "on" ]
+if [ "${navigate:-}" = "on" ]
 then
 	# If `@tilish-navigate` is nonzero, integrate Alt + hjkl with `tmux-navigate`.
 	tmux set -g '@navigate-left'  '-n M-h'
 	tmux set -g '@navigate-down'  '-n M-j'
 	tmux set -g '@navigate-up'    '-n M-k'
 	tmux set -g '@navigate-right' '-n M-l'
-elif [ "$navigator" = "on" ]
+elif [ "${navigator:-}" = "on" ]
 then
 	# If `@tilish-navigator` is nonzero, integrate Alt + hjkl with `vim-tmux-navigator`.
 	# This assumes that your Vim/Neovim is setup to use Alt + hjkl bindings as well.
 	is_vim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|n?vim?x?)(diff)?$'"
-	
+
 	tmux $bind "${mod}${h}" if-shell "$is_vim" 'send M-h' 'select-pane -L'
 	tmux $bind "${mod}${j}" if-shell "$is_vim" 'send M-j' 'select-pane -D'
 	tmux $bind "${mod}${k}" if-shell "$is_vim" 'send M-k' 'select-pane -U'
 	tmux $bind "${mod}${l}" if-shell "$is_vim" 'send M-l' 'select-pane -R'
-	
+
 	if [ -z "$prefix" ]
 	then
 		tmux bind -T copy-mode-vi "M-$h" select-pane -L
@@ -263,7 +273,7 @@ fi
 # }}}
 
 # Integrate with `fzf` to approximate `dmenu` {{{
-if [ -z "$legacy" ] && [ "$dmenu" = "on" ]
+if [ -z "$legacy" ] && [ "${dmenu:-}" = "on" ]
 then
 	if [ -n "$(command -v fzf)" ]
 	then
