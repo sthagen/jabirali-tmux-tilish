@@ -19,7 +19,7 @@
 	legacy="$(tmux -V | grep -E 'tmux (1\.|2\.[0-6])')"
 
 	# Read user options.
-	for opt in default dmenu easymode navigate navigator prefix shiftnum
+	for opt in default dmenu easymode enforce navigate navigator prefix shiftnum
 	do
 		export "$opt"="$(tmux show-option -gv @tilish-"$opt" 2>/dev/null)"
 	done
@@ -68,7 +68,6 @@ bind_move () {
 			if-shell "tmux join-pane -t :$2" \
 				"" \
 				"new-window -dt :$2; join-pane -t :$2; select-pane -t top-left; kill-pane" \\\;\
-			select-layout \\\;\
 			select-layout -E
 	else
 		tmux $bind "$1" \
@@ -232,9 +231,21 @@ tmux $bind "${mod}C" \
 # Define hooks {{{
 if [ -z "$legacy" ]
 then
-	# Autorefresh layout after deleting a pane.
-	tmux set-hook -g after-split-window "select-layout; select-layout -E"
-	tmux set-hook -g pane-exited "select-layout; select-layout -E"
+	# Autorefresh layout after creating/deleting a pane.
+	if [ "${enforce:-}" = "none" ]
+	then
+		# Never change the layout automatically.
+		:
+	elif [ "${enforce:-}" = "size" ]
+	then
+		# Enforce pane sizes but not the overall layout.
+		tmux set-hook -g after-split-window "select-layout -E"
+		tmux set-hook -g pane-exited "select-layout -E"
+	else
+		# Default: Completely enforce the selected layout.
+		tmux set-hook -g after-split-window "select-layout; select-layout -E"
+		tmux set-hook -g pane-exited "select-layout; select-layout -E"
+	fi
 
 	# Autoselect layout after creating new window.
 	if [ -n "${default:-}" ]
