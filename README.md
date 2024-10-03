@@ -117,7 +117,8 @@ while a "pane" is what `i3wm` would call a "window" and `vim` would call a "spli
 | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>0</kbd>-<kbd>9</kbd> | Move pane to workspace 0-9 |
 | <kbd>Alt</kbd> + <kbd>h</kbd><kbd>j</kbd><kbd>k</kbd><kbd>l</kbd> | Move focus left/down/up/right |
 | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>h</kbd><kbd>j</kbd><kbd>k</kbd><kbd>l</kbd> | Move pane left/down/up/right |
-| <kbd>Alt</kbd> + <kbd>o</kbd> | Move focus to next pane |
+| <kbd>Alt</kbd> + <kbd>o</kbd> | Move focus cyclically |
+| <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>o</kbd> | Move pane cyclically |
 | <kbd>Alt</kbd> + <kbd>Enter</kbd> | Create a new pane at "the end" of the current layout |
 | <kbd>Alt</kbd> + <kbd>s</kbd> | Switch to layout: split then vsplit |
 | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>s</kbd> | Switch to layout: only split |
@@ -133,6 +134,20 @@ while a "pane" is what `i3wm` would call a "window" and `vim` would call a "spli
 
 The <kbd>Alt</kbd> + <kbd>0</kbd> and <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>0</kbd> 
 bindings are "smart": depending on `base-index`, they either act on workspace 0 or 10.
+Moreover, if you press <kbd>Alt</kbd> + <kbd>3</kbd> to switch to workspace 3 and then
+press it again, you will be sent back to the previous workspace you were using.
+
+These keybindings can be changed by using a configuration setting `@tilish-remap`,
+which is somewhat similar to `vim`'s `nnoremap` command. The way it works is
+that you specify which keys you want to remap in the following format. For instance,
+say that you want to remap the `vim`-style `hjkl` movements to the arrow-like `ijkl`
+movements; use <kbd>Alt</kbd> + <kbd>p</kbd> instead of <kbd>Alt</kbd> + <kbd>Enter</kbd>
+to create new panes; and replace <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>Q</kbd>
+with <kbd>Alt</kbd> + <kbd>d</kbd> as the keybinding to close a pane. (Note: If you
+want to remap something to a key that's already in use, remember to also remap
+the key you're replacing to prevent conflicts.) This can be accomplished as follows:
+
+    set -g @tilish-remap 'h=j; j=k; k=i; l=l; Q=d; enter=p'
 
 The keybindings that move panes between workspaces assume a US keyboard layout.
 However, you can configure `tilish` for international keyboards by providing a string
