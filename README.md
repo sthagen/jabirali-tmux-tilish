@@ -87,7 +87,7 @@ For further configuration options:
 - If you do not use `vim` or `kak`, consider activating [easy mode](#easy-mode).
 - If you use `kak` or `emacs`, consider activating [prefix mode](#prefix-mode).
 - If you use `tmux` within `i3wm` or `sway`, see [this section](#usage-inside-i3wm).
-- If you like `dmenu`, check out the [application launcher](#application-launcher).
+- If you like `fzf`, check out the [project launcher](#project-launcher) and [application launcher](#application-launcher).
 - If it doesn't work, check your [terminal settings](#terminal-compatibility).
 
 It is also recommended that you add the following to the top of your `tmux.conf`:
@@ -128,6 +128,8 @@ while a "pane" is what `i3wm` would call a "window" and `vim` would call a "spli
 | <kbd>Alt</kbd> + <kbd>z</kbd> | Switch to layout: zoom (fullscreen) |
 | <kbd>Alt</kbd> + <kbd>r</kbd> | Refresh current layout |
 | <kbd>Alt</kbd> + <kbd>n</kbd> | Name current workspace |
+| <kbd>Alt</kbd> + <kbd>d</kbd> | Application launcher (if enabled) |
+| <kbd>Alt</kbd> + <kbd>p</kbd> | Project launcher (if enabled) |
 | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>q</kbd> | Quit (close) pane |
 | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>e</kbd> | Exit (detach) `tmux` |
 | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>c</kbd> | Reload config |
@@ -142,12 +144,16 @@ which is somewhat similar to `vim`'s `nnoremap` command. The way it works is
 that you specify which keys you want to remap in the following format. For instance,
 say that you want to remap the `vim`-style `hjkl` movements to the arrow-like `ijkl`
 movements; use <kbd>Alt</kbd> + <kbd>p</kbd> instead of <kbd>Alt</kbd> + <kbd>Enter</kbd>
-to create new panes; and replace <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>Q</kbd>
-with <kbd>Alt</kbd> + <kbd>d</kbd> as the keybinding to close a pane. (Note: If you
-want to remap something to a key that's already in use, remember to also remap
-the key you're replacing to prevent conflicts.) This can be accomplished as follows:
+to create new panes; replace <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>Q</kbd>
+with <kbd>Alt</kbd> + <kbd>q</kbd> as the keybinding to close a pane; and use
+<kbd>Alt</kbd> + <kbd>space</kbd> to run the application launcher.
+This can be accomplished as follows:[^remap]
 
-    set -g @tilish-remap 'h=j; j=k; k=i; l=l; Q=d; enter=p'
+    set -g @tilish-remap 'h=j; j=k; k=i; l=l; Q=q; enter=p; d=space'
+
+[^remap]: If you want to remap something to a key that's already in use,
+          remember to also remap the key you're replacing. Otherwise, it
+	  is not guaranteed that the key remapping will work.
 
 The keybindings that move panes between workspaces assume a US keyboard layout.
 However, you can configure `tilish` for international keyboards by providing a string
@@ -206,22 +212,38 @@ recommend that you increase this to at least a second if you use `tilish`:
 
 	set -g repeat-time 1000
 
+## Project launcher
+
+Many editors and IDEs provide some notion of "projects" that can be easily
+opened using fuzzy-searching. For instance, in Sublime Text you can use the
+keybinding <kbd>Cmd</kbd> + <kbd>Ctrl</kbd> + <kbd>p</kbd> to quickly open
+recent projects, and <kbd>Ctrl</kbd> + <kbd>r</kbd> does the same in VSCode.
+
+If you tell Tilish where you store your projects, it can integrate with `fzf`
+to provide a project launcher. The keybinding <kbd>Alt</kbd> + <kbd>p</kbd>
+will then pop up an `fzf` window that lets you select a directory from your
+project directory, and will then open a new `tmux` workspace in that folder
+which is automatically named to match the folder name.
+
+To enable this feature, place e.g. the following snippet in your `tmux.conf` if
+you store all your code projects in `~/Code`:
+
+    set -g @tilish-project "$HOME/Code"
+
 ## Application launcher
 
 In `i3wm`, the keybinding <kbd>Alt</kbd>+<kbd>d</kbd> is by default mapped to
 the application launcher `dmenu`, which can be practical to quickly open apps.
 If you have [`fzf`][5] available on your system, `tilish` can offer a similar 
 application launcher using the same keyboard shortcut. To enable this 
-functionality, add the following to your `~/.tmux.conf`:
+functionality, add the following to your `tmux.conf`:
 
 	set -g @tilish-dmenu 'on'
 
-Basically, pressing <kbd>Alt</kbd>+<kbd>d</kbd> will then pop up a split
-that lets you fuzzy-search through all executables in your system `$PATH`.
-Selecting an executable runs the command in that split. When you want 
-to start an interactive process, this can be more convenient than
-using <kbd>Alt</kbd>+<kbd>Enter</kbd> and typing the command name.
-This is currently only available in `tmux` v2.7+.
+Pressing <kbd>Alt</kbd>+<kbd>d</kbd> will then show a pop-up `tmux` window that
+lets you fuzzy-search through all executables in your system `$PATH`. Selecting
+an executable runs the command in a new window. This can be quite convenient
+as a way to quickly launch interactive processes like `htop` and `ipython`.
 
 [5]: https://github.com/junegunn/fzf
 
